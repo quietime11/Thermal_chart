@@ -5,7 +5,15 @@ st.write(
     "Let's start building! For help and inspiration, head over to [docs.streamlit.io](https://docs.streamlit.io/)."
 )
 """
+import subprocess
+import sys
 
+# --- Tự động cài openpyxl nếu chưa có ---
+try:
+    import openpyxl
+except ImportError:
+    subprocess.check_call([sys.executable, "-m", "pip", "install", "openpyxl"])
+    
 import streamlit as st
 import pandas as pd
 import plotly.express as px
