@@ -7,7 +7,12 @@ st.write(
 """
 import subprocess
 import sys
-pip instal openpyxl
+
+try:
+    import openpyxl
+except ImportError:
+    subprocess.check_call([sys.executable, "-m", "pip", "install", "openpyxl"])
+
 import streamlit as st
 import pandas as pd
 import plotly.express as px
