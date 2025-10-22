@@ -11,10 +11,10 @@ import pandas as pd
 import plotly.express as px
 
 # --- Giao diện tiêu đề ---
-st.title("📈 Tool Vẽ Đồ Thị Nhiệt Độ & Vận Tốc Theo Thời Gian")
+st.title("Thermal HVAC graph")
 
 # --- Upload file ---
-uploaded_file = st.file_uploader("Tải lên file Excel (.xlsx)", type=["xlsx"])
+uploaded_file = st.file_uploader("Tải lên file data thermal (.xlsx)", type=["xlsx"])
 
 if uploaded_file is not None:
     # Đọc dữ liệu từ file
