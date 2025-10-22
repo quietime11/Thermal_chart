@@ -7,13 +7,7 @@ st.write(
 """
 import subprocess
 import sys
-
-# --- Tự động cài openpyxl nếu chưa có ---
-try:
-    import openpyxl
-except ImportError:
-    subprocess.check_call([sys.executable, "-m", "pip", "install", "openpyxl"])
-    
+pip instal openpyxl
 import streamlit as st
 import pandas as pd
 import plotly.express as px
