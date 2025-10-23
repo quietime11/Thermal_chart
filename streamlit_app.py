@@ -18,8 +18,13 @@ st.title("Thermal HVAC graph")
 uploaded_file = st.file_uploader("Tải lên file data thermal (.xlsx)", type=["xlsx"])
 
 if uploaded_file is not None:
-    # Đọc dữ liệu từ file
-    df = pd.read_excel(uploaded_file)
+    file_name = uploaded_file.name
+
+    # Đọc file CSV hoặc Excel tùy theo đuôi file
+    if file_name.endswith(".csv"):
+        df = pd.read_csv(uploaded_file)
+    else:
+        df = pd.read_excel(uploaded_file, engine="openpyxl")
 
     # Hiển thị preview
     st.subheader("📋 Dữ liệu đầu vào (5 dòng đầu)")
