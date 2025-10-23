@@ -45,13 +45,13 @@ if uploaded_file is not None:
     df = df.dropna(subset=[x_col, y_col_speed, y_col_temp])
 
     # Vẽ đồ thị tốc độ
-    st.subheader("🚀 Tốc độ theo thời gian")
-    fig_speed = px.line(df, x=x_col, y=y_col_speed, markers=True,
-                        title=f"{y_col_speed} theo {x_col}")
-    st.plotly_chart(fig_speed, use_container_width=True)
+st.subheader("🚀 Tốc độ theo thời gian")
+fig_speed = px.line(df, x=x_col, y=y_col_speed, markers=True,
+                    title=f"{y_col_speed} theo {x_col}")
+st.plotly_chart(fig_speed, use_container_width=True, key="speed_chart")
 
-    # Vẽ đồ thị nhiệt độ
-    st.subheader("🔥 Nhiệt độ theo thời gian")
-    fig_temp = px.line(df, x=x_col, y=y_col_temp, markers=True,
-                       title=f"{y_col_temp} theo {x_col}")
-    st.plotly_chart(fig_temp, use_container_width=True)
+# Vẽ đồ thị nhiệt độ
+st.subheader("🔥 Nhiệt độ theo thời gian")
+fig_temp = px.line(df, x=x_col, y=y_col_temp, markers=True,
+                   title=f"{y_col_temp} theo {x_col}")
+st.plotly_chart(fig_temp, use_container_width=True, key="temp_chart")
