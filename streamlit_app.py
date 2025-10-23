@@ -15,7 +15,7 @@ import plotly.express as px
 st.title("Thermal HVAC graph")
 
 # --- Upload file ---
-uploaded_file = st.file_uploader("Tải lên file data thermal (.xlsx)", type=["xlsx"])
+uploaded_file = st.file_uploader("Upload file (.csv hoặc .xlsx)", type=["csv", "xlsx"])
 
 if uploaded_file is not None:
     file_name = uploaded_file.name
