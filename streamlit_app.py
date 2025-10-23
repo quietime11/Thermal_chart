@@ -14,50 +14,44 @@ import plotly.express as px
 # --- Giao diện tiêu đề ---
 st.title("Thermal HVAC graph")
 
-# --- Upload file ---
-uploaded_file = st.file_uploader("Upload file (.csv hoặc .xlsx)", type=["csv", "xlsx"])
+uploaded_file = st.file_uploader("Tải lên file dữ liệu (.xlsx hoặc .csv)", type=["xlsx", "csv"])
 
 if uploaded_file is not None:
     file_name = uploaded_file.name
 
-    # Đọc file CSV hoặc Excel tùy theo đuôi file
+    # Đọc file tự động
     if file_name.endswith(".csv"):
         df = pd.read_csv(uploaded_file)
     else:
         df = pd.read_excel(uploaded_file, engine="openpyxl")
 
-    # Hiển thị preview
-    st.subheader("📋 Dữ liệu đầu vào (5 dòng đầu)")
+    # Chuẩn hoá cột
+    df.columns = df.columns.str.strip()
+    
+    st.write("### 👀 Xem trước dữ liệu:")
     st.dataframe(df.head())
 
-    # --- Nhận diện các cột ---
-    time_col = [col for col in df.columns if 'Time' in col][0]
-    speed_col = [col for col in df.columns if 'Speed' in col][0]
-    temp_cols = [col for col in df.columns if 'Temp' in col]
+    # Chọn cột để vẽ
+    columns = df.columns.tolist()
+    x_col = st.selectbox("🕒 Chọn cột Thời gian (X)", columns, index=0)
+    y_col_speed = st.selectbox("🚗 Chọn cột Tốc độ (Y1)", columns)
+    y_col_temp = st.selectbox("🌡️ Chọn cột Nhiệt độ (Y2)", columns)
 
-    st.write(f"🕒 Cột thời gian: **{time_col}**")
-    st.write(f"🚗 Cột vận tốc: **{speed_col}**")
-    st.write(f"🌡️ Số lượng cảm biến nhiệt độ: {len(temp_cols)}")
+    # Xử lý dữ liệu: ép kiểu số hoặc thời gian
+    df[x_col] = pd.to_numeric(df[x_col], errors='coerce')
+    df[y_col_speed] = pd.to_numeric(df[y_col_speed], errors='coerce')
+    df[y_col_temp] = pd.to_numeric(df[y_col_temp], errors='coerce')
 
-    # --- Chọn cảm biến cần vẽ ---
-    selected_temps = st.multiselect("Chọn cảm biến nhiệt độ muốn hiển thị:", temp_cols, default=temp_cols[:3])
+    df = df.dropna(subset=[x_col, y_col_speed, y_col_temp])
 
-    # --- Xử lý dữ liệu thời gian ---
-    df[time_col] = pd.to_datetime(df[time_col], errors='coerce')
-    df = df.dropna(subset=[time_col])
-
-    # --- Vẽ đồ thị tốc độ ---
-    fig_speed = px.line(df, x=time_col, y=speed_col, title="Vận tốc theo thời gian", labels={speed_col: "Tốc độ", time_col: "Thời gian"})
+    # Vẽ đồ thị tốc độ
+    st.subheader("🚀 Tốc độ theo thời gian")
+    fig_speed = px.line(df, x=x_col, y=y_col_speed, markers=True,
+                        title=f"{y_col_speed} theo {x_col}")
     st.plotly_chart(fig_speed, use_container_width=True)
 
-    # --- Vẽ đồ thị nhiệt độ ---
-    if selected_temps:
-        df_melt = df.melt(id_vars=[time_col], value_vars=selected_temps, var_name="Cảm biến", value_name="Nhiệt độ")
-        fig_temp = px.line(df_melt, x=time_col, y="Nhiệt độ", color="Cảm biến", title="Nhiệt độ theo thời gian")
-        st.plotly_chart(fig_temp, use_container_width=True)
-
-    # --- Thống kê nhanh ---
-    st.subheader("📊 Thống kê nhanh")
-    st.write(df[selected_temps].describe())
-else:
-    st.info("⬆️ Hãy tải lên file Excel để bắt đầu.")
+    # Vẽ đồ thị nhiệt độ
+    st.subheader("🔥 Nhiệt độ theo thời gian")
+    fig_temp = px.line(df, x=x_col, y=y_col_temp, markers=True,
+                       title=f"{y_col_temp} theo {x_col}")
+    st.plotly_chart(fig_temp, use_container_width=True)
