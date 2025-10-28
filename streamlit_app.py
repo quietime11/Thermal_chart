@@ -2,49 +2,96 @@ import streamlit as st
 import pandas as pd
 import plotly.express as px
 
-# --- Giao diện tiêu đề ---
-st.title("Thermal HVAC Graph")
+# --- Giao diện chính ---
+st.set_page_config(page_title="HVAC Thermal Plot", page_icon="❄️", layout="wide")
 
-uploaded_file = st.file_uploader("📂 Tải lên file dữ liệu (.xlsx hoặc .csv)", type=["xlsx", "csv"])
+st.title("❄️ AC Cabin Cool Down Thermal Analyzer")
+st.write("Upload file dữ liệu HVAC để tự động phân tích và vẽ đồ thị nhiệt độ – tốc độ.")
+
+# --- Upload file CSV ---
+uploaded_file = st.file_uploader("📤 Tải lên file CSV dữ liệu thử nghiệm (VD: data_thermal.csv)", type=["csv"])
 
 if uploaded_file is not None:
-    file_name = uploaded_file.name
+    # --- Đọc dữ liệu ---
+    df = pd.read_csv(uploaded_file)
+    st.success("✅ File đã được tải thành công!")
 
-    # --- Đọc file tự động ---
-    if file_name.endswith(".csv"):
-        df = pd.read_csv(uploaded_file)
+    # --- Xử lý thời gian ---
+    if "Time" in df.columns:
+        df["Time"] = pd.to_datetime(df["Time"], format="%Y.%m.%d._%H:%M:%S.%f", errors="coerce")
+        df = df.sort_values("Time").reset_index(drop=True)
     else:
-        df = pd.read_excel(uploaded_file, engine="openpyxl")
+        st.error("❌ Không tìm thấy cột 'Time' trong file CSV.")
+        st.stop()
 
-    # --- Chuẩn hoá cột ---
-    df.columns = df.columns.str.strip()
+    # --- Kiểm tra cột tốc độ ---
+    if "Dyno_Speed_[dyno_speed]" not in df.columns:
+        st.error("❌ Không tìm thấy cột 'Dyno_Speed_[dyno_speed]' trong file.")
+        st.stop()
 
-    st.write("### 👀 Xem trước dữ liệu:")
-    st.dataframe(df.head())
+    # --- Mapping layout cảm biến ---
+    groups = {
+        "Outside_AGS": ["Station3_469_M1_CH1_TempK_1_[ST3_TEMP1]"],
+        "Outside_Roof": ["Station3_469_M1_CH2_TempK_2_[ST3_TEMP2]"],
+        "Vent_R1": [
+            "Station3_469_M2_CH1_TempK_3_[ST3_TEMP3]",
+            "Station3_469_M2_CH2_TempK_4_[ST3_TEMP4]",
+            "Station3_469_M3_CH1_TempK_5_[ST3_TEMP5]",
+            "Station3_469_M3_CH2_TempK_6_[ST3_TEMP6]",
+        ],
+        "Head_R1": [
+            "Station3_469_M4_CH1_TempK_7_[ST3_TEMP7]",
+            "Station3_469_M4_CH2_TempK_8_[ST3_TEMP8]",
+            "Station3_469_M5_CH1_TempK_9_[ST3_TEMP9]",
+            "Station3_469_M5_CH2_TempK_10_[ST3_TEMP10]",
+        ],
+        "Vent_R2": [
+            "Station3_469_M6_CH1_TempK_11_[ST3_TEMP11]",
+            "Station3_469_M6_CH2_TempK_12_[ST3_TEMP12]",
+        ],
+        "Head_R2": [
+            "Station3_469_M7_CH1_TempK_13_[ST3_TEMP13]",
+            "Station3_469_M7_CH2_TempK_14_[ST3_TEMP14]",
+            "Station3_469_M8_CH1_TempK_15_[ST3_TEMP15]",
+            "Station3_469_M8_CH2_TempK_16_[ST3_TEMP16]",
+        ],
+    }
 
-    # --- Chọn cột để vẽ ---
-    columns = df.columns.tolist()
-    x_col = st.selectbox("🕒 Chọn cột Thời gian (X)", columns, index=0)
-    y_col_speed = st.selectbox("🚗 Chọn cột Tốc độ (Y1)", columns)
-    y_col_temp = st.selectbox("🌡️ Chọn cột Nhiệt độ (Y2)", columns)
+    # --- Tính trung bình từng nhóm ---
+    for name, cols in groups.items():
+        valid_cols = [c for c in cols if c in df.columns]
+        if valid_cols:
+            df[name] = df[valid_cols].mean(axis=1)
+        else:
+            st.warning(f"⚠️ Không tìm thấy cột dữ liệu cho nhóm {name}")
 
-    # --- Xử lý dữ liệu ---
-    df[x_col] = pd.to_numeric(df[x_col], errors='coerce')
-    df[y_col_speed] = pd.to_numeric(df[y_col_speed], errors='coerce')
-    df[y_col_temp] = pd.to_numeric(df[y_col_temp], errors='coerce')
-    df = df.dropna(subset=[x_col, y_col_speed, y_col_temp])
+    # --- Chọn dữ liệu để vẽ ---
+    st.subheader("📊 Chọn dữ liệu hiển thị trên đồ thị")
+    options = st.multiselect(
+        "Chọn các tín hiệu muốn hiển thị:",
+        ["Vent_R1", "Vent_R2", "Head_R1", "Head_R2", "Outside_Roof", "Outside_AGS", "Dyno_Speed_[dyno_speed]"],
+        default=["Vent_R1", "Vent_R2", "Head_R1", "Head_R2", "Outside_Roof", "Outside_AGS", "Dyno_Speed_[dyno_speed]"],
+    )
 
-    # --- Vẽ đồ thị tốc độ ---
-    st.subheader("🚀 Tốc độ theo thời gian")
-    fig_speed = px.line(df, x=x_col, y=y_col_speed, markers=True,
-                        title=f"{y_col_speed} theo {x_col}")
-    st.plotly_chart(fig_speed, use_container_width=True, key="speed_chart")
+    # --- Vẽ đồ thị ---
+    st.subheader("📈 Kết quả đồ thị (Raw Data)")
+    fig = px.line(
+        df,
+        x="Time",
+        y=options,
+        title="AC Cabin Cool Down Performance (Raw Data)",
+        labels={"value": "Temperature [°C] / Speed [km/h]", "Time": "Thời gian"},
+    )
+    fig.update_layout(legend=dict(orientation="h", yanchor="bottom", y=-0.3, xanchor="center", x=0.5))
+    st.plotly_chart(fig, use_container_width=True)
 
-    # --- Vẽ đồ thị nhiệt độ ---
-    st.subheader("🔥 Nhiệt độ theo thời gian")
-    fig_temp = px.line(df, x=x_col, y=y_col_temp, markers=True,
-                       title=f"{y_col_temp} theo {x_col}")
-    st.plotly_chart(fig_temp, use_container_width=True, key="temp_chart")
+    # --- Hiển thị dữ liệu đã xử lý ---
+    with st.expander("📂 Xem dữ liệu đã xử lý"):
+        st.dataframe(df[["Time"] + options].head(30))
+
+    # --- Cho phép tải dữ liệu ---
+    csv = df.to_csv(index=False).encode("utf-8")
+    st.download_button("💾 Tải xuống dữ liệu đã xử lý", csv, "thermal_processed.csv", "text/csv")
 
 else:
-    st.info("⬆️ Hãy tải lên file dữ liệu để bắt đầu.")
+    st.info("⬆️ Hãy tải lên file CSV để bắt đầu phân tích.")
