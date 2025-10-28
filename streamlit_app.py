@@ -105,7 +105,7 @@ if uploaded_file is not None:
 
     # --- Cấu hình trục ---
     fig.update_layout(
-        title=f"AC Cool Down (42°C Ambient)}",
+        title=f"AC Cool Down (42°C Ambient)",
         xaxis=dict(title=f"Time ({'min' if time_unit == 'Phút' else 's'})"),
         yaxis=dict(title="Temperature [°C]", range=[0, None]),
         yaxis2=dict(title="Speed [kph]", overlaying="y", side="right", range=[0, None]),
