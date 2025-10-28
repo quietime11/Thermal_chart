@@ -24,6 +24,14 @@ if uploaded_file is not None:
         st.error("❌ Không tìm thấy cột 'Time' trong file CSV.")
         st.stop()
 
+    # --- Tính thời gian đếm từ 0 ---
+    df["Elapsed_s"] = (df["Time"] - df["Time"].iloc[0]).dt.total_seconds()
+    df["Elapsed_min"] = df["Elapsed_s"] / 60
+
+    # --- Cho phép người dùng chọn đơn vị thời gian hiển thị ---
+    time_unit = st.radio("🕒 Chọn đơn vị thời gian hiển thị:", ["Phút", "Giây"])
+    time_col = "Elapsed_min" if time_unit == "Phút" else "Elapsed_s"
+
     # --- Kiểm tra cột tốc độ ---
     if "Dyno_Speed_[dyno_speed]" not in df.columns:
         st.error("❌ Không tìm thấy cột 'Dyno_Speed_[dyno_speed]' trong file.")
@@ -74,20 +82,20 @@ if uploaded_file is not None:
     )
 
     # --- Vẽ đồ thị ---
-    st.subheader("📈 Kết quả đồ thị (Raw Data)")
+    st.subheader("📈 Kết quả đồ thị (Elapsed Time)")
     fig = px.line(
         df,
-        x="Time",
+        x=time_col,
         y=options,
-        title="AC Cabin Cool Down Performance (Raw Data)",
-        labels={"value": "Temperature [°C] / Speed [km/h]", "Time": "Thời gian"},
+        title=f"AC Cabin Cool Down Performance ({'Phút' if time_unit == 'Phút' else 'Giây'})",
+        labels={"value": "Temperature [°C] / Speed [km/h]", time_col: f"Thời gian ({'phút' if time_unit == 'Phút' else 'giây'})"},
     )
     fig.update_layout(legend=dict(orientation="h", yanchor="bottom", y=-0.3, xanchor="center", x=0.5))
     st.plotly_chart(fig, use_container_width=True)
 
-    # --- Hiển thị dữ liệu đã xử lý ---
+    # --- Hiển thị dữ liệu ---
     with st.expander("📂 Xem dữ liệu đã xử lý"):
-        st.dataframe(df[["Time"] + options].head(30))
+        st.dataframe(df[[time_col] + options].head(30))
 
     # --- Cho phép tải dữ liệu ---
     csv = df.to_csv(index=False).encode("utf-8")
