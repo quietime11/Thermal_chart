@@ -15,7 +15,7 @@ if uploaded_file is not None:
     st.success("✅ File đã được tải thành công!")
 
     # --- Nhập tên đồ thị ---
-    chart_title = st.text_input("📋 Nhập tên bài test (tiêu đề đồ thị):", value="AC Cabin Cool Down")
+    chart_title = st.text_input("📋 Nhập tên bài test (tiêu đề đồ thị):")
     
     # --- Xử lý thời gian ---
     if "Time" not in df.columns:
@@ -123,26 +123,40 @@ if uploaded_file is not None:
         st.error("❌ Không tìm thấy cột tốc độ 'Dyno_Speed_[dyno_speed]'.")
         st.stop()
 
-
-
-    # --- Chọn tín hiệu để hiển thị ---
+    # --- Chọn tín hiệu hiển thị ---
     st.subheader("📊 Chọn tín hiệu hiển thị")
-    available_signals = list(groups.keys()) + ["Dyno_Speed_[dyno_speed]"]
+    available_signals = list(groups.keys())
     default_signals = [s for s in available_signals if "Vent" in s or "Head" in s or "Outside" in s] + ["Dyno_Speed_[dyno_speed]"]
 
+    # --- Nếu có cột tốc độ thì cho phép người dùng tùy chọn thêm ---
+    speed_col = "Dyno_Speed_[dyno_speed]"
+    add_speed = False
+    if speed_col in df.columns:
+        add_speed = st.checkbox("Thêm tín hiệu tốc độ Dyno vào danh sách", value=False)
+        if add_speed:
+            available_signals.append(speed_col)
+            
     signals_to_plot = st.multiselect(
         "Chọn các tín hiệu cần hiển thị:",
         available_signals,
-        default=default_signals,
+        default=list(groups.keys()),
     )
 
+    
+    # --- Chọn kiểu hiển thị trục Y ---
+    y_scale_mode = st.radio(
+        "📉 Chọn chế độ hiển thị trục Y:",
+        ["Tự động scale", "Bắt đầu từ 0"],
+        horizontal=True
+    )
+    
     # --- Tạo đồ thị 2 trục tung ---
     fig = go.Figure()
 
     # Trục trái (nhiệt độ)
     colors_temp = ["#1f77b4", "#ff7f0e", "#7f7f7f", "#bcbd22", "#17becf", "#2ca02c"]
     for i, sig in enumerate(signals_to_plot):
-        if sig == "Dyno_Speed_[dyno_speed]":
+        if sig == speed_col:
             continue
         if sig in df.columns:
             fig.add_trace(go.Scatter(
@@ -153,7 +167,7 @@ if uploaded_file is not None:
             ))
 
     # Trục phải (tốc độ)
-    if "Dyno_Speed_[dyno_speed]" in signals_to_plot:
+    if speed_col in signals_to_plot:
         fig.add_trace(go.Scatter(
             x=df[time_col],
             y=df["Dyno_Speed_[dyno_speed]"],
