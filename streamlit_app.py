@@ -3,17 +3,20 @@ import pandas as pd
 import plotly.graph_objects as go
 
 # --- Giao diện chính ---
-st.set_page_config(page_title="HVAC Cool Down Analyzer", page_icon="❄️", layout="wide")
-st.title("❄️ AC Cabin Cool Down Thermal Analyzer (Auto / Manual Grouping)")
-st.write("Phân tích dữ liệu HVAC với 2 chế độ nhóm cảm biến: **Tự động** hoặc **Thủ công**.")
+st.set_page_config(page_title="Automatic HVAC Thermal Graph Tool", page_icon="🌡️", layout="wide")
+st.title("HVAC Thermal Test")
+# st.write("Phân tích dữ liệu HVAC với 2 chế độ nhóm cảm biến: **Tự động** hoặc **Thủ công**.")
 
 # --- Upload file ---
-uploaded_file = st.file_uploader("📤 Tải lên file CSV (VD: data_thermal.csv)", type=["csv"])
+uploaded_file = st.file_uploader("📤 Tải lên file data CSV (VD: data_thermal.csv)", type=["csv"])
 
 if uploaded_file is not None:
     df = pd.read_csv(uploaded_file)
     st.success("✅ File đã được tải thành công!")
 
+    # --- Nhập tên đồ thị ---
+    chart_title = st.text_input("📋 Nhập tên bài test (tiêu đề đồ thị):", value="AC Cabin Cool Down")
+    
     # --- Xử lý thời gian ---
     if "Time" not in df.columns:
         st.error("❌ Không tìm thấy cột 'Time' trong file CSV.")
@@ -109,16 +112,18 @@ if uploaded_file is not None:
 
         groups = st.session_state.groups_manual
 
-    # --- Kiểm tra cột tốc độ ---
-    if "Dyno_Speed_[dyno_speed]" not in df.columns:
-        st.error("❌ Không tìm thấy cột tốc độ 'Dyno_Speed_[dyno_speed]'.")
-        st.stop()
-
     # --- Tính trung bình từng nhóm ---
     for name, cols in groups.items():
         if len(cols) > 0:
             valid_cols = [c for c in cols if c in df.columns]
             df[name] = df[valid_cols].mean(axis=1)
+    
+    # --- Kiểm tra cột tốc độ ---
+    if "Dyno_Speed_[dyno_speed]" not in df.columns:
+        st.error("❌ Không tìm thấy cột tốc độ 'Dyno_Speed_[dyno_speed]'.")
+        st.stop()
+
+
 
     # --- Chọn tín hiệu để hiển thị ---
     st.subheader("📊 Chọn tín hiệu hiển thị")
@@ -164,22 +169,30 @@ if uploaded_file is not None:
 
     # --- Cấu hình layout ---
     fig.update_layout(
-        title=f"AC Cabin Cool Down ({'Phút' if time_unit == 'Phút' else 'Giây'})",
+        title=f"{chart_title} ({'Phút' if time_unit == 'Phút' else 'Giây'})",
         xaxis=dict(
             title=f"Time ({'min' if time_unit == 'Phút' else 's'})",
             showgrid=True,
             gridcolor="lightgray",
-            gridwidth=1,
             tickmode="array",
             tickvals=grid_lines,
             ticktext=[str(x) for x in grid_lines],
         ),
-        yaxis=dict(title="Temperature [°C]", gridcolor="lightgray", gridwidth=1),
-        yaxis2=dict(title="Speed [kph]", overlaying="y", side="right"),
+        yaxis=dict(
+            title="Temperature [°C]",
+            gridcolor="lightgray",
+            rangemode="tozero" if y_scale_mode == "Bắt đầu từ 0" else "normal"
+        ),
+        yaxis2=dict(
+            title="Speed [kph]",
+            overlaying="y",
+            side="right",
+            rangemode="tozero" if y_scale_mode == "Bắt đầu từ 0" else "normal"
+        ),
         legend=dict(orientation="h", yanchor="bottom", y=-0.25, xanchor="center", x=0.5),
         template="plotly_white",
-        margin=dict(t=80, b=80),
-        height=600
+        height=600,
+        margin=dict(t=80, b=80)
     )
 
     # --- Hiển thị biểu đồ ---
