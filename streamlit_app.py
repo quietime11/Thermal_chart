@@ -70,19 +70,27 @@ if uploaded_file is not None:
         if "groups_manual" not in st.session_state:
             st.session_state.groups_manual = {}
 
-        # --- Thêm nhóm mới ---
+        # --- Xác định cảm biến còn lại chưa dùng ---
+        used_sensors = [s for sensors in st.session_state.groups_manual.values() for s in sensors]
+        available_sensors = [s for s in temp_cols if s not in used_sensors]
+
+        # --- Tạo nhóm mới ---
         with st.expander("➕ Tạo nhóm cảm biến mới"):
             new_group_name = st.text_input("Nhập tên nhóm mới (VD: Vent_R1, Cabin_Front, Battery_Inlet):")
-            temp_cols = [c for c in df.columns if "TEMP" in c]
-            new_group_sensors = st.multiselect("Chọn cảm biến cho nhóm này:", temp_cols, key="new_group_select")
+            new_group_sensors = st.multiselect(
+                "Chọn cảm biến cho nhóm này:",
+                available_sensors,
+                key=f"select_{len(st.session_state.groups_manual)}"
+            )
 
             if st.button("Thêm nhóm vào danh sách"):
                 if new_group_name and new_group_sensors:
                     st.session_state.groups_manual[new_group_name] = new_group_sensors
                     st.success(f"✅ Đã thêm nhóm **{new_group_name}** ({len(new_group_sensors)} cảm biến).")
+                    st.rerun()  # Cập nhật lại danh sách cảm biến còn lại
                 else:
                     st.warning("⚠️ Hãy nhập tên và chọn ít nhất 1 cảm biến trước khi thêm.")
-
+        
         # --- Hiển thị danh sách nhóm hiện có ---
         if st.session_state.groups_manual:
             st.subheader("📋 Danh sách nhóm hiện tại:")
