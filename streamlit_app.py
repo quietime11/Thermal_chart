@@ -64,22 +64,41 @@ if uploaded_file is not None:
 
     # --- CHẾ ĐỘ THỦ CÔNG ---
     else:
-        st.info("✏️ Chọn thủ công cảm biến theo layout thực tế.")
-        Vent_R1 = st.multiselect("Chọn cảm biến Vent R1:", temp_cols)
-        Vent_R2 = st.multiselect("Chọn cảm biến Vent R2:", temp_cols)
-        Head_R1 = st.multiselect("Chọn cảm biến Head R1:", temp_cols)
-        Head_R2 = st.multiselect("Chọn cảm biến Head R2:", temp_cols)
-        Outside_Roof = st.multiselect("Chọn cảm biến Outside Roof:", temp_cols)
-        Outside_AGS = st.multiselect("Chọn cảm biến Outside AGS:", temp_cols)
+    st.info("✏️ Chọn thủ công cảm biến theo layout thực tế hoặc tự đặt tên nhóm mới.")
 
-        groups = {
-            "Vent_R1": Vent_R1,
-            "Vent_R2": Vent_R2,
-            "Head_R1": Head_R1,
-            "Head_R2": Head_R2,
-            "Outside_Roof": Outside_Roof,
-            "Outside_AGS": Outside_AGS,
-        }
+    # --- Khởi tạo session lưu nhóm ---
+    if "groups_manual" not in st.session_state:
+        st.session_state.groups_manual = {}
+
+    # --- Thêm nhóm mới ---
+    with st.expander("➕ Tạo nhóm cảm biến mới"):
+        new_group_name = st.text_input("Nhập tên nhóm mới (VD: Vent_R1, Cabin_Front, Battery_Inlet):")
+        temp_cols = [c for c in df.columns if "TEMP" in c]
+        new_group_sensors = st.multiselect("Chọn cảm biến cho nhóm này:", temp_cols, key="new_group_select")
+
+        if st.button("Thêm nhóm vào danh sách"):
+            if new_group_name and new_group_sensors:
+                st.session_state.groups_manual[new_group_name] = new_group_sensors
+                st.success(f"✅ Đã thêm nhóm **{new_group_name}** ({len(new_group_sensors)} cảm biến).")
+            else:
+                st.warning("⚠️ Hãy nhập tên và chọn ít nhất 1 cảm biến trước khi thêm.")
+
+    # --- Hiển thị danh sách nhóm hiện có ---
+    if st.session_state.groups_manual:
+        st.subheader("📋 Danh sách nhóm hiện tại:")
+        for gname, sensors in st.session_state.groups_manual.items():
+            st.write(f"**{gname}:** {', '.join(sensors)}")
+
+        # Cho phép xóa nhóm
+        remove_group = st.selectbox("🗑️ Xóa nhóm:", ["(Không)", *st.session_state.groups_manual.keys()])
+        if remove_group != "(Không)" and st.button("Xóa nhóm này"):
+            del st.session_state.groups_manual[remove_group]
+            st.success(f"🗑️ Đã xóa nhóm **{remove_group}**.")
+
+    else:
+        st.info("Chưa có nhóm nào. Hãy thêm nhóm mới ở trên.")
+
+    groups = st.session_state.groups_manual
 
     # --- Kiểm tra cột tốc độ ---
     if "Dyno_Speed_[dyno_speed]" not in df.columns:
