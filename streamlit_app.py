@@ -2,11 +2,10 @@ import streamlit as st
 import pandas as pd
 import plotly.graph_objects as go
 
-# --- Giao diện chính ---
+# --- Cấu hình giao diện ---
 st.set_page_config(page_title="HVAC Cool Down Graph", page_icon="❄️", layout="wide")
-
-st.title("❄️ AC Cabin Cool Down Thermal Analyzer (Dual Y-Axis)")
-st.write("Upload file dữ liệu HVAC để tự động vẽ đồ thị nhiệt độ và tốc độ với 2 trục tung riêng biệt.")
+st.title("❄️ AC Cabin Cool Down Thermal Analyzer (Dual Y + Grid)")
+st.write("Upload file dữ liệu HVAC để vẽ đồ thị có 2 trục tung và đường lưới thời gian như mẫu OEM.")
 
 # --- Upload file ---
 uploaded_file = st.file_uploader("📤 Tải lên file CSV (VD: data_thermal.csv)", type=["csv"])
@@ -59,7 +58,7 @@ if uploaded_file is not None:
         ],
     }
 
-    # --- Tính trung bình nhóm ---
+    # --- Tính trung bình từng nhóm ---
     for name, cols in groups.items():
         valid_cols = [c for c in cols if c in df.columns]
         if valid_cols:
@@ -72,8 +71,8 @@ if uploaded_file is not None:
         st.error("❌ Không tìm thấy cột tốc độ 'Dyno_Speed_[dyno_speed]'.")
         st.stop()
 
-    # --- Chọn dữ liệu ---
-    st.subheader("📊 Chọn tín hiệu cần hiển thị (trục trái = nhiệt độ, trục phải = tốc độ)")
+    # --- Chọn tín hiệu để hiển thị ---
+    st.subheader("📊 Chọn tín hiệu hiển thị (trục trái = nhiệt độ, trục phải = tốc độ)")
     temp_signals = st.multiselect(
         "Chọn các tín hiệu nhiệt độ:",
         ["Vent_R1", "Vent_R2", "Head_R1", "Head_R2", "Outside_Roof", "Outside_AGS"],
@@ -103,11 +102,25 @@ if uploaded_file is not None:
         yaxis="y2"
     ))
 
-    # --- Cấu hình trục ---
+    # --- Tạo các đường lưới dọc theo mốc thời gian ---
+    # Tự động xác định bước lưới (mỗi 10 phút hoặc 100 giây)
+    step = 10 if time_unit == "Phút" else 100
+    max_time = df[time_col].max()
+    grid_lines = list(range(0, int(max_time) + step, step))
+
+    # --- Cấu hình đồ thị ---
     fig.update_layout(
-        title=f"AC Cool Down (42°C Ambient)",
-        xaxis=dict(title=f"Time ({'min' if time_unit == 'Phút' else 's'})"),
-        yaxis=dict(title="Temperature [°C]", range=[0, None]),
+        title=f"AC Cabin Cool Down (42°C Ambient) — Time in {time_unit.lower()}",
+        xaxis=dict(
+            title=f"Time ({'min' if time_unit == 'Phút' else 's'})",
+            showgrid=True,
+            gridcolor="lightgray",
+            gridwidth=1,
+            tickmode="array",
+            tickvals=grid_lines,
+            ticktext=[str(x) for x in grid_lines],
+        ),
+        yaxis=dict(title="Temperature [°C]", range=[0, None], gridcolor="lightgray", gridwidth=1),
         yaxis2=dict(title="Speed [kph]", overlaying="y", side="right", range=[0, None]),
         legend=dict(orientation="h", yanchor="bottom", y=-0.25, xanchor="center", x=0.5),
         template="plotly_white",
@@ -115,6 +128,7 @@ if uploaded_file is not None:
         height=600
     )
 
+    # Hiển thị biểu đồ
     st.plotly_chart(fig, use_container_width=True)
 
     # --- Hiển thị dữ liệu ---
