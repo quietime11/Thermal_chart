@@ -102,6 +102,7 @@ if uploaded_file is not None:
             if remove_group != "(Không)" and st.button("Xóa nhóm này"):
                 del st.session_state.groups_manual[remove_group]
                 st.success(f"🗑️ Đã xóa nhóm **{remove_group}**.")
+                st.rerun()
 
         else:
             st.info("Chưa có nhóm nào. Hãy thêm nhóm mới ở trên.")
