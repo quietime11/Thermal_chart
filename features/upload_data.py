@@ -4,10 +4,10 @@ import pandas as pd
 def load_data(uploaded_file):
     try:
         df = pd.read_csv(uploaded_file)
-        st.success("✅ File đã được tải thành công!")
+        st.success("File has been successfully uploaded!")
 
         if "Time" not in df.columns:
-            st.error("❌ Không tìm thấy cột 'Time' trong file CSV.")
+            st.error("Column 'Time' not found in the CSV file.")
             return None
 
         df["Time"] = pd.to_datetime(df["Time"], format="%Y.%m.%d._%H:%M:%S.%f", errors="coerce")
@@ -17,5 +17,5 @@ def load_data(uploaded_file):
 
         return df
     except Exception as e:
-        st.error(f"⚠️ Lỗi khi đọc file: {e}")
+        st.error(f"Error while reading file: {e}")
         return None
