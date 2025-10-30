@@ -1,7 +1,7 @@
 import streamlit as st
-from pages.upload_data import load_data
-from pages.grouping import select_grouping_mode
-from pages.chart import plot_chart
+from features.upload_data import load_data
+from features.group import select_grouping_mode
+from features.chart import plot_chart
 
 st.set_page_config(page_title="HVAC Thermal Graph Tool", page_icon="🌡️", layout="wide")
 st.title("🌡️ HVAC Thermal Test Analyzer")
