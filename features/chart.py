@@ -124,3 +124,12 @@ def plot_chart(df, groups):
             delta_t = abs(marker_positions[1] - marker_positions[0])
             unit = "phút" if time_unit == "Phút" else "giây"
             st.markdown(f"⏱️ **Khoảng thời gian giữa 2 thanh: {delta_t:.2f} {unit}**")
+
+    # --- Hiển thị dữ liệu ---
+    with st.expander("📂 Xem dữ liệu đã xử lý"):
+        st.dataframe(df[[time_col] + signals_to_plot].head(30))
+
+    # --- Cho phép tải dữ liệu ---
+    csv = df.to_csv(index=False).encode("utf-8")
+    st.download_button("💾 Tải xuống dữ liệu đã xử lý", csv, "thermal_processed.csv", "text/csv")
+
