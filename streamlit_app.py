@@ -14,4 +14,4 @@ if uploaded_file is not None:
         groups = select_grouping_mode(df)
         plot_chart(df, groups)
 else:
-    st.info("Please upload file .CSV of the thermal data.")
+    st.info("Please upload CSV file of the thermal data.")
