@@ -1,12 +1,12 @@
 import streamlit as st
 
 def select_grouping_mode(df):
-    mode = st.radio("🔧 Chọn chế độ nhóm cảm biến:", ["Tự động", "Thủ công"])
+    mode = st.radio("🔧 Select sensor grouping mode:", ["Automatic", "Manual"])
     temp_cols = [c for c in df.columns if "TEMP" in c]
     groups = {}
 
-    if mode == "Tự động":
-        st.info("🤖 Nhóm cảm biến tự động theo đặc trưng nhiệt độ.")
+    if mode == "Automatic":
+        st.info("Automatically group sensors based on thermal characteristics.")
         groups_auto = {"Vent": [], "Head": [], "Outside": []}
         for col in temp_cols:
             series = df[col].dropna()
@@ -22,32 +22,32 @@ def select_grouping_mode(df):
                 groups_auto["Outside"].append(col)
         groups = groups_auto
         for k, v in groups.items():
-            st.write(f"**{k}:** {', '.join(v) if v else '(Không có cảm biến phù hợp)'}")
+            st.write(f"**{k}:** {', '.join(v) if v else '(No matching sensors)'}")
 
     else:
-        st.info("✏️ Tạo nhóm cảm biến thủ công.")
+        st.info("Create sensor groups manually.")
         if "groups_manual" not in st.session_state:
             st.session_state.groups_manual = {}
         used_sensors = [s for sensors in st.session_state.groups_manual.values() for s in sensors]
         available_sensors = [s for s in temp_cols if s not in used_sensors]
 
-        with st.expander("➕ Tạo nhóm mới"):
-            new_group_name = st.text_input("Tên nhóm mới:")
-            new_group_sensors = st.multiselect("Chọn cảm biến:", available_sensors)
-            if st.button("Thêm nhóm"):
+        with st.expander("Create a new group"):
+            new_group_name = st.text_input("New group name:")
+            new_group_sensors = st.multiselect("Select sensors:", available_sensors)
+            if st.button("Add group"):
                 if new_group_name and new_group_sensors:
                     st.session_state.groups_manual[new_group_name] = new_group_sensors
-                    st.success(f"✅ Thêm nhóm {new_group_name}")
+                    st.success(f"Added group {new_group_name}")
                     st.rerun()
 
         if st.session_state.groups_manual:
-            st.write("### 📋 Nhóm hiện có:")
+            st.write("### Existing groups:")
             for gname, sensors in st.session_state.groups_manual.items():
                 st.write(f"**{gname}:** {', '.join(sensors)}")
-            remove = st.selectbox("🗑️ Xóa nhóm:", ["(Không)", *st.session_state.groups_manual.keys()])
-            if remove != "(Không)" and st.button("Xóa nhóm này"):
+            remove = st.selectbox("Delete group:", ["(None)", *st.session_state.groups_manual.keys()])
+            if remove != "(None)" and st.button("Delete this group"):
                 del st.session_state.groups_manual[remove]
-                st.success(f"Đã xóa nhóm {remove}")
+                st.success(f"Deleted group {remove}")
                 st.rerun()
 
         groups = st.session_state.groups_manual
