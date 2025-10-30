@@ -2,7 +2,7 @@ import streamlit as st
 import plotly.graph_objects as go
 
 def plot_chart(df, groups):
-    chart_title = st.text_input("📋 Nhập tên bài test (tiêu đề đồ thị):", value="HVAC Thermal Test")
+    chart_title = st.text_input("📋 Nhập tên bài test (tiêu đề đồ thị):")
 
     time_unit = st.radio("🕒 Chọn đơn vị thời gian:", ["Phút", "Giây"])
     time_col = "Elapsed_min" if time_unit == "Phút" else "Elapsed_s"
@@ -10,10 +10,9 @@ def plot_chart(df, groups):
     speed_col = "Dyno_Speed_[dyno_speed]"
     available_signals = list(groups.keys())
     if speed_col in df.columns:
-        if st.checkbox("Thêm tốc độ Dyno", value=False):
-            available_signals.append(speed_col)
+        available_signals.append(speed_col)
 
-    signals_to_plot = st.multiselect("📊 Chọn tín hiệu:", available_signals, default=list(groups.keys()))
+    signals_to_plot = st.multiselect("📊 Chọn tín hiệu:", available_signals,)
     y_scale_mode = st.radio("📉 Trục Y:", ["Tự động scale", "Bắt đầu từ 0"], horizontal=True)
 
     fig = go.Figure()
