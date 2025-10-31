@@ -3,11 +3,11 @@ import pandas as pd
 import plotly.graph_objects as go
 
 def plot_chart(df, groups):
-    chart_title = st.text_input("📋 Nhập tên bài test (tiêu đề đồ thị):")
+    chart_title = st.text_input("Enter the graph title:")
 
     # --- Chọn đơn vị thời gian ---
-    time_unit = st.radio("🕒 Chọn đơn vị thời gian:", ["Phút", "Giây"])
-    time_col = "Elapsed_min" if time_unit == "Phút" else "Elapsed_s"
+    time_unit = st.radio("Select time unit::", ["Minute", "Second"])
+    time_col = "Elapsed_min" if time_unit == "Minute" else "Elapsed_s"
 
     # --- Cột tốc độ (nếu có) ---
     speed_col = "Dyno_Speed_[dyno_speed]"
@@ -17,7 +17,7 @@ def plot_chart(df, groups):
 
     # --- Chọn tín hiệu hiển thị ---
     signals_to_plot = st.multiselect("📊 Chọn tín hiệu:", available_signals)
-    y_scale_mode = st.radio("📉 Trục Y:", ["Tự động scale", "Bắt đầu từ 0"], horizontal=True)
+    y_scale_mode = st.radio("📉 Trục Y:", ["Auto scale", "Default"], horizontal=True)
 
     # --- Khởi tạo biểu đồ ---
     fig = go.Figure()
@@ -44,11 +44,11 @@ def plot_chart(df, groups):
         ))
 
     # --- Tạo lưới dọc ---
-    step = 10 if time_unit == "Phút" else 100
+    step = 10 if time_unit == "Minute" else 100
     grid_lines = list(range(0, int(df[time_col].max()) + step, step))
 
     # --- Scale trục ---
-    if y_scale_mode == "Bắt đầu từ 0":
+    if y_scale_mode == "Default":
         temp_max = df[[sig for sig in signals_to_plot if sig != speed_col]].max().max()
         speed_max = df[speed_col].max() if speed_col in signals_to_plot and speed_col in df.columns else 0
         yaxis_range = [0, temp_max * 1.1] if not pd.isna(temp_max) else [0, 1]
@@ -58,35 +58,35 @@ def plot_chart(df, groups):
         yaxis2_range = None
 
     # --- Cài đặt thanh dọc ---
-    st.subheader("📍 Thanh đánh dấu (Markers)")
-    num_markers = st.radio("Số lượng thanh dọc:", [0, 1, 2], index=0, horizontal=True)
+    st.subheader("Set point")
+    num_markers = st.radio("Number of set points:", [0, 1, 2], index=0, horizontal=True)
 
     marker_positions = []
     if num_markers > 0:
         max_time = float(df[time_col].max())
         for i in range(num_markers):
             pos = st.slider(
-                f"🕓 Vị trí thanh {i+1}",
+                f"Set point position {i+1}",
                 0.0, max_time, value=max_time/4*(i+1), step=max_time/200,
                 format="%.2f"
             )
             marker_positions.append(pos)
 
-            # Vẽ thanh dọc
+            # Draw set point in chart
             fig.add_vline(
                 x=pos,
                 line_width=2,
                 line_dash="dash",
                 line_color="red" if i == 0 else "green",
-                annotation_text=f"Marker {i+1}",
+                annotation_text=f"Set point {i+1}",
                 annotation_position="top"
             )
 
     # --- Cấu hình layout ---
     fig.update_layout(
-        title=f"{chart_title} ({'Phút' if time_unit == 'Phút' else 'Giây'})",
+        title=f"{chart_title} ({'Minute' if time_unit == 'Minute' else 'Second'})",
         xaxis=dict(
-            title=f"Time ({'min' if time_unit == 'Phút' else 's'})",
+            title=f"Time ({'min' if time_unit == 'Minute' else 's'})",
             showgrid=True,
             gridcolor="lightgray",
             tickmode="array",
@@ -106,11 +106,11 @@ def plot_chart(df, groups):
 
     # --- Hiển thị bảng giá trị ---
     if num_markers > 0:
-        st.subheader("📊 Giá trị tại các thanh dọc:")
+        st.subheader("Values at set point:")
         results = []
         for i, pos in enumerate(marker_positions):
             idx = (df[time_col] - pos).abs().idxmin()
-            row = {"Thanh": f"Marker {i+1}", "Thời gian": f"{df[time_col].iloc[idx]:.2f}"}
+            row = {"Set point": f"Set point {i+1}", "Time": f"{df[time_col].iloc[idx]:.2f}"}
             for sig in signals_to_plot:
                 if sig in df.columns:
                     row[sig] = f"{df[sig].iloc[idx]:.2f}"
@@ -122,7 +122,7 @@ def plot_chart(df, groups):
         # --- Nếu có 2 thanh: hiển thị Δt ---
         if len(marker_positions) == 2:
             delta_t = abs(marker_positions[1] - marker_positions[0])
-            unit = "phút" if time_unit == "Phút" else "giây"
+            unit = "Minute" if time_unit == "Minute" else "Second"
             st.markdown(f"⏱️ **Khoảng thời gian giữa 2 thanh: {delta_t:.2f} {unit}**")
 
     # --- Hiển thị dữ liệu ---
