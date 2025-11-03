@@ -116,7 +116,13 @@ def plot_chart(df, groups):
 
     # --- Cấu hình layout ---
     fig.update_layout(
-        title=f"{chart_title} ({'Minute' if time_unit == 'Minute' else 'Second'})",
+        title=dict(
+            text=f"{chart_title} ({'Minute' if time_unit == 'Minute' else 'Second'})",
+            x=0.5,                # 👉 Căn giữa theo trục X
+            xanchor="center",     # Giữ vị trí trung tâm
+            yanchor="top",        # Neo ở phía trên
+            font=dict(size=20, color="black", family="Arial")  # Tuỳ chỉnh font nếu muốn
+        ),
         xaxis=dict(
             title=f"Time ({'min' if time_unit == 'Minute' else 's'})",
             showgrid=True,
