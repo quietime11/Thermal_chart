@@ -6,6 +6,7 @@ import matplotlib.pyplot as plt
 from matplotlib.backends.backend_qt5agg import FigureCanvasQTAgg as FigureCanvas
 from matplotlib.backends.backend_qt5agg import NavigationToolbar2QT as NavigationToolbar
 from matplotlib.figure import Figure
+from matplotlib.ticker import MultipleLocator
 from PyQt5.QtWidgets import (QApplication, QMainWindow, QWidget, QVBoxLayout, 
                              QHBoxLayout, QGridLayout, QLabel, QPushButton, 
                              QFileDialog, QMessageBox, QLineEdit, QRadioButton,
@@ -347,11 +348,22 @@ class ThermalAnalyzerPyQt(QMainWindow):
         # Auto-update when time unit changes
         self.time_minute.toggled.connect(self.auto_update_chart)
         self.time_second.toggled.connect(self.auto_update_chart)
+        # Update interval options when unit changes
+        self.time_minute.toggled.connect(self.update_time_interval_options)
+        self.time_second.toggled.connect(self.update_time_interval_options)
         time_layout.addWidget(self.time_minute)
         time_layout.addWidget(self.time_second)
         chart_layout.addLayout(time_layout, 1, 1)
-        
-        chart_layout.addWidget(QLabel("Y-axis:"), 2, 0)
+
+        # Interval selection (dynamic based on Minutes/Seconds)
+        chart_layout.addWidget(QLabel("Interval:"), 2, 0)
+        self.time_interval_combo = QComboBox()
+        self.time_interval_combo.addItems(["2", "5", "10", "15", "20"])  # default in minutes
+        # When interval changes, update chart
+        self.time_interval_combo.currentIndexChanged.connect(self.auto_update_chart)
+        chart_layout.addWidget(self.time_interval_combo, 2, 1)
+
+        chart_layout.addWidget(QLabel("Y-axis:"), 3, 0)
         y_axis_layout = QHBoxLayout()
         self.y_axis_group = QButtonGroup()
         self.y_auto = QRadioButton("Auto")
@@ -364,7 +376,7 @@ class ThermalAnalyzerPyQt(QMainWindow):
         self.y_from_zero.toggled.connect(self.auto_update_chart)
         y_axis_layout.addWidget(self.y_auto)
         y_axis_layout.addWidget(self.y_from_zero)
-        chart_layout.addLayout(y_axis_layout, 2, 1)
+        chart_layout.addLayout(y_axis_layout, 3, 1)
         
         layout.addWidget(chart_group, 1, 1)  # Row 1, Column 1
         
@@ -1061,6 +1073,17 @@ class ThermalAnalyzerPyQt(QMainWindow):
         
         # Set X axis to start from 0 with minimal margin
         ax1.set_xlim(left=0, right=self.df[time_col].max())
+
+        # Apply user-selected interval to X axis ticks
+        try:
+            if hasattr(self, 'time_interval_combo'):
+                interval_text = self.time_interval_combo.currentText()
+                interval_val = float(interval_text)
+                # Use MultipleLocator with the selected interval (same units as time_col)
+                ax1.xaxis.set_major_locator(MultipleLocator(interval_val))
+        except Exception:
+            # If any problem, leave default tick locator
+            pass
         
         # Enhanced axes styling with arrows and triangle markers
         # Style the spines (axis lines)
@@ -1104,7 +1127,7 @@ class ThermalAnalyzerPyQt(QMainWindow):
         
         # Style secondary axis if it exists
         if has_speed:
-            ax2.set_ylabel("Speed [RPM]", fontweight='bold', color='darkblue')
+            ax2.set_ylabel("Speed [KPH]", fontweight='bold', color='darkblue')
             ax2.tick_params(axis='y', labelcolor='darkblue', direction='out', 
                            length=5, width=1, which='major', pad=6, color='darkblue')
             
@@ -1234,6 +1257,32 @@ class ThermalAnalyzerPyQt(QMainWindow):
             except ValueError:
                 return colors[0]  # Fallback
 
+    def update_time_interval_options(self):
+        """Update `time_interval_combo` options based on selected time unit"""
+        # If UI is not yet constructed, skip
+        if not hasattr(self, 'time_interval_combo'):
+            return
+
+        if self.time_minute.isChecked():
+            # minute options: 2,5,10,15,20 (minutes)
+            items = ["2", "5", "10", "15", "20"]
+        else:
+            # second options: 50,100,200 (seconds)
+            items = ["50", "100", "200"]
+
+        # Remember previous selection when possible
+        prev = self.time_interval_combo.currentText() if self.time_interval_combo.currentIndex() >= 0 else None
+        self.time_interval_combo.blockSignals(True)
+        self.time_interval_combo.clear()
+        self.time_interval_combo.addItems(items)
+        # Restore closest previous selection if it exists
+        if prev and prev in items:
+            self.time_interval_combo.setCurrentText(prev)
+        else:
+            # default to first item
+            self.time_interval_combo.setCurrentIndex(0)
+        self.time_interval_combo.blockSignals(False)
+
     def add_setpoint_tooltips(self, ax1, ax2, pos, label, signals_to_plot, time_col, setpoint_index):
         """Add tooltips for each signal at set point position with smart positioning"""
         # Find closest data point to set point position
@@ -1294,7 +1343,7 @@ class ThermalAnalyzerPyQt(QMainWindow):
             
             # Create tooltip text - only value, no signal name
             if is_speed:
-                tooltip_text = f"{y_val:.0f} RPM"
+                tooltip_text = f"{y_val:.0f} KPH"
             else:
                 tooltip_text = f"{y_val:.1f}°C"
             
@@ -1423,7 +1472,7 @@ class ThermalAnalyzerPyQt(QMainWindow):
                 
                 # Create tooltip text - only value, no signal name
                 if is_speed:
-                    tooltip_text = f"{y_val:.0f} RPM"
+                    tooltip_text = f"{y_val:.0f} KPH"
                 else:
                     tooltip_text = f"{y_val:.1f}°C"
                 
@@ -1582,7 +1631,7 @@ class ThermalAnalyzerPyQt(QMainWindow):
                     speed_col = "Dyno_Speed_[dyno_speed]"
                     if speed_col in self.signals_to_plot and speed_col in self.df.columns:
                         speed_value = self.df.loc[closest_idx, speed_col]
-                        tooltip_lines.append(f"Speed: {speed_value:.0f} RPM")
+                        tooltip_lines.append(f"Speed: {speed_value:.0f} KPH")
                     
                     # Create/update tooltip
                     tooltip_text = "\n".join(tooltip_lines)
