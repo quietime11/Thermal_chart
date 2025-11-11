@@ -40,6 +40,20 @@ class ThermalAnalyzerPyQt(QMainWindow):
         
         # Set application style
         self.set_style()
+
+        # Set window icon (handles running from source and from PyInstaller bundle)
+        try:
+            icon_path = None
+            if getattr(sys, 'frozen', False):
+                # Running as bundled app (PyInstaller)
+                icon_path = os.path.join(sys._MEIPASS, 'favicon.ico')
+            else:
+                icon_path = os.path.join(os.getcwd(), 'favicon.ico')
+
+            if icon_path and os.path.exists(icon_path):
+                self.setWindowIcon(QIcon(icon_path))
+        except Exception:
+            pass
         
         # Show status message
         self.status_bar.showMessage("Ready - Upload CSV file to start analysis")
@@ -1926,8 +1940,14 @@ def main():
     
     # Set application icon if available
     try:
-        if os.path.exists('icon.ico'):
-            app.setWindowIcon(QIcon('icon.ico'))
+        icon_path = None
+        if getattr(sys, 'frozen', False):
+            icon_path = os.path.join(sys._MEIPASS, 'logoi.ico')
+        else:
+            icon_path = os.path.join(os.getcwd(), 'logoi.ico')
+
+        if icon_path and os.path.exists(icon_path):
+            app.setWindowIcon(QIcon(icon_path))
     except:
         pass
     
